@@ -69,6 +69,6 @@ static char* KeyWords[KEYWORD_LEN] = {
 int isNum(char c);
 int isLetter(char c);
 int isLetterOrNum(char c);
-int gettoken(FILE*);
+int getToken(FILE*);
 
 #endif  // LANGUAGE_FORMAT_PROCESSING_TOOL_GETTOKEN_H

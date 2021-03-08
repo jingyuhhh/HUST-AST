@@ -1,4 +1,4 @@
-#include "gettoken.h"
+#include "getToken.h"
 
 char token_text[20];  //存放单词自身值
 char string_num[20];  //存放数字的字符串
@@ -35,7 +35,7 @@ int add2token(char* token, char c) {
     return 1;
 }
 
-int gettoken(FILE* fp) {
+int getToken(FILE* fp) {
     char c;
     *(token_text) = '\0';
     /* trim spaces*/

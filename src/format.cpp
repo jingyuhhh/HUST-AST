@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gettoken.h"
+#include "getToken.h"
 
 extern FILE* fp;
 extern char token_text[20];
@@ -58,7 +58,7 @@ void format() {
 }
 
 token* readline() {
-    int word = gettoken(fp);
+    int word = getToken(fp);
     if (word == -1) {
         return NULL;
     }
@@ -74,7 +74,7 @@ token* readline() {
     char c;
     while ((c = fgetc(fp)) != '\n') {
         ungetc(c, fp);
-        gettoken(fp);
+        getToken(fp);
         tail->next = (token*)malloc(sizeof(token));
         tail = tail->next;
         token_text1 = (char*)malloc(25 * sizeof(char));
