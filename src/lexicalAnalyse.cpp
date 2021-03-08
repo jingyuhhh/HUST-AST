@@ -1,12 +1,12 @@
-#include "wordAnalyse.h"
+#include "lexicalAnalyse.h"
 #include "getToken.h"
 
 extern char token_text[20];  //存放单词自身值
 extern int cnt_lines;
 extern FILE* fp;
 
-int wordAnalyse() {
-    int kind;
+int lexicalAnalyse() {
+    int type;
     if (fp == NULL) {
         printf("文件打开失败\n");
     } else {
@@ -16,9 +16,9 @@ int wordAnalyse() {
     printf("  单词类别");
     printf("\t单词值\n");
     do {
-        kind = getToken(fp);
-        if (kind != ERROR_TOKEN) {
-            switch (kind) {
+        type = getToken(fp);
+        if (type != ERROR_TOKEN) {
+            switch (type) {
                 case IDENT:
                     printf("   标识符");
                     break;
@@ -175,7 +175,7 @@ int wordAnalyse() {
             printf("\t第%d行出现错误\n", cnt_lines);
             break;
         }
-    } while (kind != -1);
+    } while (type != -1);
 
     return 0;
 }

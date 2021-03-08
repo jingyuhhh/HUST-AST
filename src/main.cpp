@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "format.h"
 #include "getToken.h"
+#include "lexicalAnalyse.h"
 #include "syntaxAnalyse.h"
-#include "wordAnalyse.h"
 
 char* filename;
 FILE* fp;
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
         switch (option) {
             case 1:
                 fp = fopen(filename, "r");
-                wordAnalyse();
+                lexicalAnalyse();
                 printf("Press any key to continue\n");
                 fclose(fp);
                 getchar();
