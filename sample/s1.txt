@@ -62,7 +62,5 @@ a=b+c;
 }while(a>1);
 return a+b;
 }
-/*函数声明*/
+/* function def */
 void def();
-
-~

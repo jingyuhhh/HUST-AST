@@ -13,7 +13,7 @@ int lexicalAnalyse() {
     }
     printf("\n");
     printf("  WordType");
-    printf("\tWord值\n");
+    printf("\tWordValue\n");
     do {
         type = getToken(fp);
         if (type != ERROR_TOKEN) {

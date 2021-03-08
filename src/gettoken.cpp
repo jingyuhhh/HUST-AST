@@ -442,7 +442,7 @@ int getToken(FILE* fp) {
                 ungetc(c, fp);
                 return LESS;
             }
-        case '~':
+        case EOF:
             return -1;
         default:
             return ERROR_TOKEN;

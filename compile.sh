@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cd build && make && cd .. && ./bin/main.exe ./sample/s1.txt
+cmake && cd build && make && cd .. && ./bin/main.exe ./sample/s1.txt
