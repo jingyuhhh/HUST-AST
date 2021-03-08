@@ -1,5 +1,7 @@
 # 高级语言源程序语法分析与格式处理工具
 
+> 本实验"学习"了[zhangyazhe](https://github.com/zhangyazhe)的[这个库](https://github.com/zhangyazhe/Course_Project), 并对其功能进行了补充和完善
+
 ## 功能介绍
 
 ### 1. 词法分析
@@ -93,7 +95,7 @@ void def();
 例如
 
 ```bash
-# bin 目录中
+# *nix环境下, bin 目录中
 ./main.exe ../sample/s1.txt
 ```
 
@@ -103,3 +105,7 @@ void def();
 # 项目根目录下
 ./compile.sh
 ```
+
+## LICENSE
+
+[MIT](https://github.com/xiong35/HUST-DataStructural-Lab-AST/blob/master/LICENSE)
