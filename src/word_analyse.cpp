@@ -1,6 +1,4 @@
 #include "word_analyse.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include "getToken.h"
 
 extern char token_text[20];  //存放单词自身值
