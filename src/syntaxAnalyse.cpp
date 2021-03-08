@@ -3,24 +3,21 @@
 
 using namespace std;
 
-extern char token_text[20];  //存放自身单词值
+extern char token_text[20];
 extern char string_num[20];
 extern int cnt_lines;
-int w, type;  //全局变量，存放当前读入的单词种类编码
-int mistake = 0;  //全局变量，有任何一个未知出错都会导致其值变为1
+int w, type;  // token type
+int haveMistake = 0;
 extern FILE* fp;
-VDN* Vroot;  //变量名链表根节点
+VDN* Vroot;  // VarName链表根节点
 int isVoid, hasReturn, isInRecycle = 0;
 
 void syntaxAnalyse() {
     ASTTree* root = program();
-    if (root == NULL || mistake == 1) {
-        printf("程序语法错误\n");
+    if (root == NULL || haveMistake == 1) {
+        printf("Syntax Error!\n");
         return;
     } else {
-        printf("代码正确\n\n");
-        /*呈现语法树*/
-        /*递归先序遍历*/
         PreorderTranverse(root, 0);
     }
 }
@@ -36,21 +33,18 @@ ASTTree* program() {
     ASTTree* p = ExtDefList();
     if (p != NULL) {
         if (isVoid == 0 && hasReturn == 0) {
-            printf("错误：函数缺少返回值\n");
+            printf("Error: Mising return value\n");
             exit(0);
         }
-        /*程序语法正确，返回语法树根节点指针，可遍历显示*/
-        ASTTree* root = p;  //外部定义序列结点
+        ASTTree* root = p;  // External Defs
         root->type = EXTDEFLIST;
         return root;
     } else {
-        //有语法错误
-        mistake = 1;
+        haveMistake = 1;
         return NULL;
     }
 }
 
-/*释放root为根的全部结点*/
 void freeTree(ASTTree* root) {
     if (root) {
         freeTree(root->l);
@@ -59,14 +53,14 @@ void freeTree(ASTTree* root) {
     }
 }
 
-ASTTree* ExtDefList() {  //处理外部定义序列
-    if (mistake == 1) {
+ASTTree* ExtDefList() {
+    if (haveMistake == 1) {
         return NULL;
     }
     if (w == -1) {
         return NULL;
     }
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //外部定义序列结点
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->type = EXTDEFLIST;
     root->l = ExtDef();
@@ -78,32 +72,30 @@ ASTTree* ExtDefList() {  //处理外部定义序列
     return root;
 }
 
-/*语法单位<外部定义>子程序*/
-//调用前已经读入了一个单词
 ASTTree* ExtDef() {
     int a;
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
     if (w != INT && w != DOUBLE && w != CHAR && w != LONG && w != SHORT &&
         w != FLOAT && w != VOID) {
-        printf("第%d行出现错误\n", cnt_lines);  //%
-        printf("错误：外部定义出现错误\n");
+        printf("Mistake in line %d\n", cnt_lines);
+        printf("Error: Wrong external define\n");
         exit(0);
     }
-    type = w;  //保存类型说明符
+    type = w;
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
         w = getToken(fp);
     }
     if (w != IDENT && w != ARRAY) {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：外部定义出现错误\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: 外部Def出现错误\n");
         exit(0);
     }
     a = w;
     char token_text0[20];
-    strcpy(token_text0, token_text);  //保存第一个变量名或者函数名到token_text0
+    strcpy(token_text0, token_text);  // var name
     ASTTree* p;
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
@@ -112,7 +104,7 @@ ASTTree* ExtDef() {
     strcpy(token_text, token_text0);
     if (w == LP) {
         p = FuncDef();
-    } else if (a == ARRAY) {  //数组定义，读完了整个数组读到了分号
+    } else if (a == ARRAY) {  // def of array
         p = ArrayDef();
     } else {
         p = ExtVarDef();
@@ -120,13 +112,10 @@ ASTTree* ExtDef() {
     return p;
 }
 
-/*处理数组定义的子程序*/
 ASTTree* ArrayDef() {
-    //此时token_text中包括数组名与中括号
     if (type == VOID) {
-        //数组类型不能是void
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：数组类型不能是void\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: Can't declare a void type array\n");
         exit(0);
     }
     ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
@@ -156,6 +145,7 @@ ASTTree* ArrayDef() {
     if (type == SHORT) {
         p->data.data = "short";
     }
+
     root->l = p;
     p = (ASTTree*)malloc(sizeof(ASTTree));
     p->type = ARRAYNAME;
@@ -167,45 +157,42 @@ ASTTree* ArrayDef() {
     root->r = p;
     ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));
     q->type = ARRAYSIZE;
-    q->l = NULL;
-    q->r = NULL;
+    q->l = q->r = NULL;
     q->data.data = string_num;
     p->l = q;
     return root;
-}  //退出时不能多读单词
+}
 
-/*处理外部变量子程序*/
 ASTTree* ExtVarDef() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
     int cnt;
     if (type == VOID) {
-        //外部变量类型不能是void
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：外部变量类型不能是void\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: Can't declare a void type variable\n");
         exit(0);
     }
 
     int u;
-    u = addname(token_text);
+    u = addName(token_text);
     if (u == 1) {
-        //变量被重复定义
-        mistake = 1;
+        haveMistake = 1;
         return NULL;
     }
 
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量定义的结点
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->l = NULL;
     root->r = NULL;
     root->data.data = NULL;
     root->type = EXTVARDEF;
-    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量类型结点
-    p->l = NULL;
-    p->r = NULL;
+
+    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
+    p->l = p->r = NULL;
     p->data.data = NULL;
     p->type = EXTVARTYPE;
     p->data.type = type;
+
     if (type == INT) {
         p->data.data = "int";
     }
@@ -224,28 +211,29 @@ ASTTree* ExtVarDef() {
     if (type == SHORT) {
         p->data.data = "short";
     }
+
     root->l = p;
-    p = (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量名序列结点
-    p->l = NULL;
-    p->r = NULL;
+    p = (ASTTree*)malloc(sizeof(ASTTree));
+    p->l = p->r = NULL;
     p->data.data = NULL;
     p->type = EXTVARLIST;
     root->r = p;
-    p->l = (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量名结点
-    p->l->l = NULL;
-    p->l->r = NULL;
+
+    p->l = (ASTTree*)malloc(sizeof(ASTTree));
+    p->l->l = p->l->r = NULL;
     p->data.data = NULL;
     p->l->type = EXTVAR;
     char* token_text1 = (char*)malloc(25 * sizeof(char));  //@
     strcpy(token_text1, token_text);
     p->l->data.data = token_text1;
+
     while (1) {
         if (w != COMMA && w != SEMI) {
             if (cnt_lines > cnt) {
                 cnt_lines--;
             }
-            printf("第%d行出现错误\n", cnt_lines);  //%
-            printf("错误：外部变量定义处出现错误\n");
+            printf("Error in line %d\n", cnt_lines);  //%
+            printf("Error: Wrong external define\n");
             exit(0);
         }
         if (w == SEMI) {
@@ -253,30 +241,27 @@ ASTTree* ExtVarDef() {
         }
         w = getToken(fp);
         if (w != IDENT) {
-            printf("第%d行出现错误\n", cnt_lines);  //%
-            printf("错误：外部变量定义处出现错误\n");
+            printf("Error in line %d\n", cnt_lines);  //%
+            printf("Error: Wrong external define\n");
             exit(0);
         }
 
         int u;
-        u = addname(token_text);
+        u = addName(token_text);
         if (u == 1) {
-            //变量被重复定义
-            mistake = 1;
+            haveMistake = 1;
             return NULL;
         }
 
-        ASTTree* q =
-            (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量名序列结点
-        q->l = NULL;
-        q->r = NULL;
+        ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));
+        q->l = q->r = NULL;
         q->data.data = NULL;
         q->type = EXTVARLIST;
         p->r = q;
         p = q;
-        p->l = (ASTTree*)malloc(sizeof(ASTTree));  //生成外部变量名结点
-        p->l->l = NULL;
-        p->l->r = NULL;
+
+        p->l = (ASTTree*)malloc(sizeof(ASTTree));
+        p->l->l = p->l->r = NULL;
         p->l->data.data = NULL;
         p->l->type = EXTVAR;
         char* token_text1 = (char*)malloc(25 * sizeof(char));
@@ -284,21 +269,21 @@ ASTTree* ExtVarDef() {
         p->l->data.data = token_text1;
         cnt = cnt_lines;
         w = getToken(fp);
+
         while (w == ANNO || w == INCLUDE) {
             w = getToken(fp);
         }
     }
-}  //退出函数时没有多读取单词
+}
 
-/*处理外部函数子程序*/
 ASTTree* FuncDef() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  // 生成函数定义结点
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->type = FUNCDEF;
-    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //生成返回值类型结点
+    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
     p->data.data = NULL;
     p->type = FUNCRETURNTYPE;
     p->data.type = type;
@@ -333,7 +318,8 @@ ASTTree* FuncDef() {
     p->l = NULL;
     p->r = NULL;
     root->l = p;
-    /*处理参数*/
+
+    // param
     ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));
     q->data.data = NULL;
     q->type = FUNCNAME;
@@ -341,7 +327,6 @@ ASTTree* FuncDef() {
     strcpy(token_text1, token_text);
     q->data.data = token_text1;
 
-    //在变量名链表上生成新的结点$
     VDN* last = Vroot;
     while (last->next != NULL) {
         last = last->next;
@@ -353,33 +338,31 @@ ASTTree* FuncDef() {
 
     root->r = q;
     q->l = FormParaList();
-    /*判断是何种函数定义*/
+
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
         w = getToken(fp);
     }
     if (w == SEMI) {
-        /*函数原型声明*/
-        root->r->r = NULL;  //函数体结点为空
+        // prototype declare
+        root->r->r = NULL;
         root->type = FUNCCLAIM;
     } else if (w == LB) {
-        //函数体（复合语句）子程序
         q->r = CompState();
         q->r->type = FUNCBODY;
     } else {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：函数定义处出错\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: Error in function declaration\n");
         exit(0);
     }
     return root;
 }
 
-/*处理形式参数子程序*/
 ASTTree* FormParaList() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    //第一次进入此函数之前，已经识别到了左括号
+
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
         w = getToken(fp);
@@ -393,7 +376,7 @@ ASTTree* FormParaList() {
             w = getToken(fp);
         }
     }
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //生成形式参数序列结点
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->type = FUNCFORMALPARALIST;
     root->l = FormParaDef();
@@ -402,29 +385,29 @@ ASTTree* FormParaList() {
 }
 
 ASTTree* FormParaDef() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
     if (w != INT && w != DOUBLE && w != CHAR && w != LONG && w != SHORT &&
         w != FLOAT) {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：形参定义处出现错误\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: error in parameter\n");
         exit(0);
     }
-    type = w;  //保存类型说明符
+    type = w;
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
         w = getToken(fp);
     }
     if (w != IDENT) {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：形参定义处出现错误\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error:  error in parameter\n");
         exit(0);
     }
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //生成形式参数定义的结点
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->type = FUNCFORMALPARADEF;
-    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //生成形参类型结点
+    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
     p->data.data = NULL;
     p->type = FUNCFORMALPARATYPE;
     p->data.type = type;
@@ -449,37 +432,33 @@ ASTTree* FormParaDef() {
     if (type == VOID) {
         p->data.data = "void";
     }
-    p->l = NULL;
-    p->r = NULL;
+    p->l = p->r = NULL;
     root->l = p;
-    p = (ASTTree*)malloc(sizeof(ASTTree));  //生成形参名结点
+    p = (ASTTree*)malloc(sizeof(ASTTree));
     p->data.data = NULL;
     p->type = FUNCFORMALPARA;
 
     int u;
-    u = addname(token_text);
+    u = addName(token_text);
     if (u == 1) {
-        //变量被重复定义
-        mistake = 1;
+        haveMistake = 1;
         return NULL;
     }
 
     char* token_text1 = (char*)malloc(25 * sizeof(char));
     strcpy(token_text1, token_text);
-    p->data.data = token_text1;  //记录形参名
-    p->l = NULL;
-    p->r = NULL;
+    p->data.data = token_text1;
+    p->l = p->r = NULL;
     root->r = p;
     return root;
 }
 
-/*复合语句子程序*/
 ASTTree* CompState() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    /*调用此子程序时，已经读入了单词{，继续处理时，如果遇到}，结束复合语句*/
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //生成复合语句结点
+
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->l = NULL;
     root->r = NULL;
@@ -491,72 +470,65 @@ ASTTree* CompState() {
         w == FLOAT) {
         root->l = LocalVarDefList();
     } else {
-        /*无局部变量声明*/
         root->l = NULL;
     }
-    /*调用处理语句序列子程序*/
     root->r = StateList();
     if (w == RB) {
-        //遇到右大括号结束
         return root;
     } else {
-        printf("错误：处理复合语句出错\n");
+        printf("Error: error in compound statement\n");
         exit(0);
-        mistake = 1;
+        haveMistake = 1;
         freeTree(root);
         return NULL;
     }
 }
 
-/*局部变量定义子程序*/
 ASTTree* LocalVarDefList() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    /*仅读取一行，到分号结束*/
-    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));  //局部变量定义序列结点
+
+    ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->data.data = NULL;
     root->type = LOCALVARDEFLIST;
     root->l = NULL;
     root->r = NULL;
-    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //局部变量定义结点
+    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
     p->data.data = NULL;
     p->type = LOCALVARDEF;
-    p->l = NULL;
-    p->r = NULL;
+    p->l = p->r = NULL;
     root->l = p;
-    p->l = (ASTTree*)malloc(sizeof(ASTTree));  //局部变量类型结点
+    p->l = (ASTTree*)malloc(sizeof(ASTTree));
     p->l->data.data = NULL;
     p->l->type = LOCALVARTYPE;
     char* token_text1 = (char*)malloc(25 * sizeof(char));
     strcpy(token_text1, token_text);
     p->l->data.data = token_text1;
-    p->l->l = NULL;
-    p->l->r = NULL;
+    p->l->l = p->l->r = NULL;
+
     w = getToken(fp);
     while (w == ANNO || w == INCLUDE) {
         w = getToken(fp);
     }
-    ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));  //变量名序列结点
+    ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));  // VarNameS结点
     q->data.data = NULL;
-    q->l = NULL;
-    q->r = NULL;
+    q->l = q->r = NULL;
+
     p->r = q;
     q->type = LOCALVARNAMELIST;
-    q->l = (ASTTree*)malloc(sizeof(ASTTree));  //局部变量名结点
+    q->l = (ASTTree*)malloc(sizeof(ASTTree));  // LocalVarName结点
     q->l->data.data = NULL;
     q->l->type = LOCALVARNAME;
     char* token_text2 = (char*)malloc(25 * sizeof(char));
     strcpy(token_text2, token_text);
     q->l->data.data = token_text2;
-    q->l->l = NULL;
-    q->l->r = NULL;
+    q->l->l = q->l->r = NULL;
 
     int u;
-    u = addname(token_text);
+    u = addName(token_text);
     if (u == 1) {
-        //变量被重复定义
-        mistake = 1;
+        haveMistake = 1;
         return NULL;
     }
 
@@ -566,9 +538,8 @@ ASTTree* LocalVarDefList() {
             w = getToken(fp);
         }
         if (w == SEMI) {
-            /*局部变量定义结束*/
             q->r = NULL;
-            w = getToken(fp);  //多读一个
+            w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
@@ -578,12 +549,12 @@ ASTTree* LocalVarDefList() {
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
-            ASTTree* s = (ASTTree*)malloc(sizeof(ASTTree));  //变量名序列结点
+            ASTTree* s = (ASTTree*)malloc(sizeof(ASTTree));
             s->data.data = NULL;
             q->r = s;
             q = q->r;
             q->type = LOCALVARNAMELIST;
-            q->l = (ASTTree*)malloc(sizeof(ASTTree));  //局部变量名结点
+            q->l = (ASTTree*)malloc(sizeof(ASTTree));
             q->l->data.data = NULL;
             q->l->type = LOCALVARNAME;
             char* token_text1 = (char*)malloc(25 * sizeof(char));
@@ -591,20 +562,19 @@ ASTTree* LocalVarDefList() {
             q->l->data.data = token_text1;
 
             int u;
-            u = addname(token_text);
+            u = addName(token_text);
             if (u == 1) {
-                //变量被重复定义
                 freeTree(root);
-                mistake = 1;
+                haveMistake = 1;
                 return NULL;
             }
         } else {
-            printf("第%d行出现错误\n", cnt_lines);  //%
-            printf("错误：局部变量定义出错\n");
+            printf("Error in line %d\n", cnt_lines);  //%
+            printf("Error: Wrong definition of variable\n");
             exit(0);
         }
     }
-    /*局部变量定义可能不只一行*/
+
     if (w == INT || w == DOUBLE || w == CHAR || w == LONG || w == SHORT ||
         w == FLOAT) {
         root->r = LocalVarDefList();
@@ -613,19 +583,15 @@ ASTTree* LocalVarDefList() {
     }
     root->r = NULL;
     return root;
-    //此函数结束时是多读了一个词的
 }
 
-/*<语句序列>子程序*/
-/*处理前已经读入语句序列的第一个单词*/
 ASTTree* StateList() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
     ASTTree* root = NULL;
     ASTTree* r1 = Statement();
     if (r1 == NULL) {
-        //语句序列已结束或者出现错误
         return NULL;
     } else {
         root = (ASTTree*)malloc(sizeof(ASTTree));
@@ -637,38 +603,35 @@ ASTTree* StateList() {
         while (w == ANNO || w == INCLUDE) {
             w = getToken(fp);
         }
-        if (w != RB) {  //程序还没结束
+        if (w != RB) {
             root->r = StateList();
             return root;
-        } else {  //程序结束了
+        } else {
             return root;
         }
     }
-    //程序结束时，多读取了一个单词
 }
 
-/*<处理一条语句>子程序*/
 ASTTree* Statement() {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    //调用此程序时，语句的第一个单词已经读入
     ASTTree* root = (ASTTree*)malloc(sizeof(ASTTree));
     root->l = NULL;
     root->r = NULL;
     root->data.data = NULL;
     switch (w) {
-        case IF: {  //分析条件语句
+        case IF: {
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             if (w != LP) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：if语句出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: Wrong IF statement\n");
                 exit(0);
             }
-            //处理表达式的子程序
+
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
@@ -676,18 +639,17 @@ ASTTree* Statement() {
             ASTTree* p1 = (ASTTree*)malloc(sizeof(ASTTree));
             p1->data.data = NULL;
             p1->type = IFPART;
-            p1->l = Expression(RP);  //处理一句表达式
+            p1->l = Expression(RP);
             if (p1->l == NULL) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：if语句条件部分出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: ifStatementCondition部分出错\n");
                 exit(0);
             }
-            w = getToken(fp);  //读到左大括号
+            w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             if (w == LB) {
-                /*if部分的语句是有大括号括住的，可以有多条语句，以右大括号结束*/
                 w = getToken(fp);
                 while (w == ANNO || w == INCLUDE) {
                     w = getToken(fp);
@@ -696,15 +658,14 @@ ASTTree* Statement() {
             } else if (w == INT_CONST || w == FLOAT_CONST || w == CHAR_CONST ||
                        w == IDENT || w == KEYWORD || w == IF || w == WHILE ||
                        w == ELSE || w == FOR || w == DO) {
-                /*没有大括号，此处只能有一条语句*/
                 p1->r = Statement();
                 p1->r->r = NULL;
             } else {
-                printf("错误：if语句体出错\n");
-                mistake = 1;
+                printf("Error: Error within IF\n");
+                haveMistake = 1;
                 return NULL;
             }
-            root->l = p1;  // if部分处理完毕
+            root->l = p1;
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
@@ -720,7 +681,6 @@ ASTTree* Statement() {
                     w = getToken(fp);
                 }
                 if (w == LB) {
-                    /*else部分的语句是有大括号括住的，可以有多条语句，以右大括号结束*/
                     w = getToken(fp);
                     while (w == ANNO || w == INCLUDE) {
                         w = getToken(fp);
@@ -728,19 +688,18 @@ ASTTree* Statement() {
                     p2->r = StateList();
                 } else if (w == INT_CONST || w == FLOAT_CONST ||
                            w == CHAR_CONST || w == IDENT || w == KEYWORD) {
-                    /*没有大括号，此处只能有一条语句*/
                     p2->r = Statement();
                     p2->r->r = NULL;
                 } else if (w == IF) {
                     p2->l = Statement();
                 } else {
-                    printf("错误：else子句出错\n");
-                    mistake = 1;
+                    printf("Error: Error in ELSE\n");
+                    haveMistake = 1;
                     return NULL;
                 }
             } else {
                 root->type = IFSTATEMENT;
-                returntoken(w, fp);
+                returnToken(w, fp);
             }
             return root;
         }
@@ -751,41 +710,40 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != LP) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：while语句出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: Error in WHILE\n");
                 exit(0);
-                mistake = 1;
+                haveMistake = 1;
                 return NULL;
             }
-            //处理表达式的子程序
+
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             ASTTree* p1 = (ASTTree*)malloc(sizeof(ASTTree));
             p1->data.data = NULL;
-            p1->type = WHILEPART;  // while条件语句
+            p1->type = WHILEPART;
             p1->l = NULL;
             p1->r = NULL;
-            p1->l = Expression(RP);  //处理一句表达式 while条件语句
+            p1->l = Expression(RP);
             if (p1->l == NULL) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：while语句条件部分出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: whileStatementCondition部分出错\n");
                 exit(0);
-                mistake = 1;
+                haveMistake = 1;
                 return NULL;
-            }  // while条件部分处理完毕
+            }
             ASTTree* p2 = (ASTTree*)malloc(sizeof(ASTTree));
             p2->data.data = NULL;
             p2->type = WHILEBODY;
             p2->l = NULL;
             p2->r = NULL;
-            w = getToken(fp);  //读到左大括号
+            w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             if (w == LB) {
-                /*while部分的语句是有大括号括住的，可以有多条语句，以右大括号结束*/
                 w = getToken(fp);
                 while (w == ANNO || w == INCLUDE) {
                     w = getToken(fp);
@@ -793,14 +751,13 @@ ASTTree* Statement() {
                 p2->r = StateList();
             } else if (w == INT_CONST || w == FLOAT_CONST || w == CHAR_CONST ||
                        w == IDENT || w == KEYWORD) {
-                /*没有大括号，此处只能有一条语句*/
                 p2->r = Statement();
                 p2->r->r = NULL;
             } else {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：while语句出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: Error in WHILE\n");
                 exit(0);
-                mistake = 1;
+                haveMistake = 1;
                 return NULL;
             }
             root->type = WHILESTATEMENT;
@@ -816,10 +773,10 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != LP) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：for语句出错\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: Error in FOR\n");
                 exit(0);
-                mistake = 1;
+                haveMistake = 1;
                 return NULL;
             }
             w = getToken(fp);
@@ -828,52 +785,51 @@ ASTTree* Statement() {
             }
             ASTTree* p1 = (ASTTree*)malloc(sizeof(ASTTree));
             p1->data.data = NULL;
-            p1->type = FORPART;                              // for条件语句
-            ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));  //条件一
+            p1->type = FORPART;
+            ASTTree* q = (ASTTree*)malloc(sizeof(ASTTree));  // FOR part 1
             p1->l = q;
             q->type = FORPART1;
             q->data.data = NULL;
             q->l = Expression(SEMI);
             if (q->l == NULL) {
-                q->data.data = "无";
+                q->data.data = "None";
             }
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
-            q->r = (ASTTree*)malloc(sizeof(ASTTree));  // for语句条件二
+            q->r = (ASTTree*)malloc(sizeof(ASTTree));  // FOR part 2
             q = q->r;
             q->type = FORPART2;
             q->data.data = NULL;
             q->l = Expression(SEMI);
             if (q->l == NULL) {
-                q->data.data = "无";
+                q->data.data = "None";
             }
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
-            q->r = (ASTTree*)malloc(sizeof(ASTTree));  // for语句条件三
+            q->r = (ASTTree*)malloc(sizeof(ASTTree));  // FOR part 3
             q = q->r;
             q->r = NULL;
             q->type = FORPART3;
             q->data.data = NULL;
             q->l = Expression(RP);
             if (q->l == NULL) {
-                q->data.data = "无";
+                q->data.data = "None";
             }
-            // for语句条件部分处理完毕
-            ASTTree* p2 = (ASTTree*)malloc(sizeof(ASTTree));  // for语句体结点
+
+            ASTTree* p2 = (ASTTree*)malloc(sizeof(ASTTree));  // FOR body
             p2->l = NULL;
             p2->r = NULL;
             p2->type = FORBODY;
             p2->data.data = NULL;
-            w = getToken(fp);  //读到左大括号
+            w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             if (w == LB) {
-                /*for语句体是有大括号括住的，可以有多条语句，以右大括号结束*/
                 w = getToken(fp);
                 while (w == ANNO || w == INCLUDE) {
                     w = getToken(fp);
@@ -881,11 +837,10 @@ ASTTree* Statement() {
                 p2->r = StateList();
             } else if (w == INT_CONST || w == FLOAT_CONST || w == CHAR_CONST ||
                        w == IDENT || w == KEYWORD) {
-                /*没有大括号，此处只能有一条语句*/
                 p2->r = Statement();
                 p2->r->r = NULL;
             } else {
-                printf("错误：for语句出错\n");
+                printf("Error: Error in FOR\n");
                 exit(0);
             }
             root->type = FORSTATEMENT;
@@ -897,8 +852,8 @@ ASTTree* Statement() {
         case RETURN: {
             hasReturn = 1;
             if (isVoid == 1) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：函数不应该有返回值\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: There should be no return statement\n");
                 exit(0);
             }
             root->type = RETURNSTATEMENT;
@@ -918,37 +873,36 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != LB) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：do-while语句缺少大括号\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: mising bracket in do-while\n");
                 exit(0);
             }
+
             ASTTree* p1 = (ASTTree*)malloc(sizeof(ASTTree));
             p1->type = DOWHILEBODY;
-            p1->l = NULL;
-            p1->r = NULL;
+            p1->l = p1->r = NULL;
+
             ASTTree* p2 = (ASTTree*)malloc(sizeof(ASTTree));
             p2->type = DOWHILECONDITION;
-            p2->l = NULL;
-            p2->r = NULL;
+            p2->l = p2->r = NULL;
+
             root->l = p1;
             root->r = p2;
-            root->data.data = NULL;
-            p1->data.data = NULL;
-            p2->data.data = NULL;
+            root->data.data = p1->data.data = p2->data.data = NULL;
+
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             p1->l = StateList();
 
-            // do-while语句体处理完毕
             w = getToken(fp);
             while (w == ANNO || w == INCLUDE) {
                 w = getToken(fp);
             }
             if (w != WHILE) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：do-while语句缺少while关键字\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: missing WHILE in do-while\n");
                 freeTree(root);
                 exit(0);
             }
@@ -958,8 +912,8 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != LP) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：do-while语句缺少while条件\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: missing condition in do-while\n");
                 freeTree(root);
                 exit(0);
             }
@@ -969,8 +923,8 @@ ASTTree* Statement() {
             }
             p2->l = Expression(RP);
             if (p2->l == NULL) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：do-while语句缺少条件\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: missing condition in do-while\n");
                 exit(0);
             }
             w = getToken(fp);
@@ -978,8 +932,8 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != SEMI) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：do-while语句缺少分号\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: mising semicolon in do-while\n");
                 freeTree(root);
                 exit(0);
             }
@@ -992,13 +946,13 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != SEMI) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：break语句缺少分号\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: mising semicolon in BREAK\n");
                 exit(0);
             }
             if (isInRecycle == 0) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：非循环语句中出现了break语句\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: unexpected BREAK\n");
                 exit(0);
             }
             root->type = BREAKSTATEMENT;
@@ -1010,13 +964,13 @@ ASTTree* Statement() {
                 w = getToken(fp);
             }
             if (w != SEMI) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：continue语句缺少分号\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: mising semicolon in continue\n");
                 exit(0);
             }
             if (isInRecycle == 0) {
-                printf("第%d行出现错误\n", cnt_lines);
-                printf("错误：非循环语句中出现了continue语句\n");
+                printf("Error in line %d\n", cnt_lines);
+                printf("Error: unexpected continue\n");
                 exit(0);
             }
             root->type = CONTINUESTATEMENT;
@@ -1030,28 +984,26 @@ ASTTree* Statement() {
             return Expression(SEMI);
     }
     return root;
-}  //程序结束时没有多读单词
+}
 
-/*<表达式>子程序*/
-//调用前已经读入了一个单词
-ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或者右小括号
-    if (mistake == 1) {
+ASTTree* Expression(int endsym) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    if (w == endsym) {  //针对for循环可能会出现语句为空的情况
+    if (w == endsym) {
         return NULL;
     }
     int error = 0;
-    stack<ASTTree*> op;                              //运算符栈
-    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //定义起止符号结点
+    stack<ASTTree*> op;
+    ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
     p->data.data = NULL;
     p->type = OPERATOR;
     p->data.type = POUND;
     op.push(p);
-    stack<ASTTree*> opn;  //操作数栈
+    stack<ASTTree*> opn;
     ASTTree *t, *t1, *t2, *root;
     while (((w != endsym) || (op.top()->data.type != POUND)) && !error) {
-        if (op.top()->data.type == RP) {  //去括号
+        if (op.top()->data.type == RP) {
             if (op.size() < 3) {
                 error++;
                 break;
@@ -1061,7 +1013,7 @@ ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或
         }
         if (w == IDENT) {
             if (checkname_exist(token_text) == 0) {
-                mistake = 1;
+                haveMistake = 1;
             }
         }
         if (w == IDENT || w == INT_CONST || w == FLOAT_CONST ||
@@ -1078,7 +1030,7 @@ ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或
                 w = getToken(fp);
             }
         } else if (w == endsym) {
-            ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));  //定义起止符号结点
+            ASTTree* p = (ASTTree*)malloc(sizeof(ASTTree));
             p->data.data = NULL;
             p->type = OPERATOR;
             p->data.type = POUND;
@@ -1133,7 +1085,7 @@ ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或
                         w = getToken(fp);
                     }
                     break;
-                case '=':  //去括号
+                case '=':
                     t = op.top();
                     if (!t) {
                         error++;
@@ -1189,8 +1141,8 @@ ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或
                     }
                     break;
                 case '\0':
-                    printf("第%d行出现警告\n", cnt_lines);
-                    printf("警告：出现未知运算符\n");
+                    printf("Error in line %d\n", cnt_lines);
+                    printf("Error: unknown operator\n");
                     exit(0);
             }
         } else {
@@ -1208,16 +1160,14 @@ ASTTree* Expression(int endsym) {  // endsym是表达式结束符号，分号或
         root->l = t;
         return root;
     } else {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：表达式出现错误\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: wrong expression\n");
         exit(0);
     }
-    //函数结束时w为endsym
 }
 
-/*比较优先级函数*/
 char Precede(int c1, int c2) {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
     if (c1 == PLUS || c1 == MINUS) {
@@ -1421,7 +1371,7 @@ char Precede(int c1, int c2) {
     }
 }
 
-void returntoken(int w, FILE* fp) {
+void returnToken(int w, FILE* fp) {
     int digit = strlen(token_text);
     int i;
     for (i = 0; i < digit; i++) {
@@ -1432,158 +1382,158 @@ void returntoken(int w, FILE* fp) {
 void showType(int type) {
     switch (type) {
         case 1:
-            printf("外部定义序列\n");
+            printf("ExtDefS\n");
             break;
         case 2:
-            printf("外部变量定义\n");
+            printf("ExtDef\n");
             break;
         case 3:
-            printf("外部变量类型\n");
+            printf("ExtVarType\n");
             break;
         case 4:
-            printf("外部变量名序列\n");
+            printf("ExtVarNameS\n");
             break;
         case 5:
-            printf("外部变量名\n");
+            printf("ExtVarName\n");
             break;
         case 6:
-            printf("函数定义\n");
+            printf("FuncDef\n");
             break;
         case 7:
-            printf("函数返回值类型\n");
+            printf("FuncRetTypr\n");
             break;
         case 8:
-            printf("函数名\n");
+            printf("FuncName\n");
             break;
         case 9:
-            printf("函数形参序列\n");
+            printf("FuncParamS\n");
             break;
         case 10:
-            printf("函数形参定义\n");
+            printf("FuncPramaDef\n");
             break;
         case 11:
-            printf("函数形参类型\n");
+            printf("FuncPramaType\n");
             break;
         case 12:
-            printf("函数形参名\n");
+            printf("FuncPramaName\n");
             break;
         case 13:
-            printf("函数体\n");
+            printf("FuncBody\n");
             break;
         case 14:
-            printf("局部变量定义序列\n");
+            printf("LocalVarDefS\n");
             break;
         case 15:
-            printf("局部变量定义\n");
+            printf("LocalVarDef\n");
             break;
         case 16:
-            printf("局部变量类型\n");
+            printf("LocalVarType\n");
             break;
         case 17:
-            printf("局部变量名序列\n");
+            printf("LocalVarNameS\n");
             break;
         case 18:
-            printf("局部变量名\n");
+            printf("LocalVarName\n");
             break;
         case 19:
-            printf("语句序列\n");
+            printf("StatementS\n");
             break;
         case 20:
-            printf("操作数\n");
+            printf("Operatee\n");
             break;
         case 21:
-            printf("运算符\n");
+            printf("Operator\n");
             break;
         case 22:
-            printf("表达式\n");
+            printf("Statement\n");
             break;
         case 23:
-            printf("if条件语句\n");
+            printf("IF-ConditionStatement\n");
             break;
         case 24:
-            printf("else语句体\n");
+            printf("ELSE-StatementBody\n");
             break;
         case 25:
-            printf("if语句\n");
+            printf("IF-Statement\n");
             break;
         case 26:
-            printf("if-else语句\n");
+            printf("IF-ELSE-Statement\n");
             break;
         case 27:
-            printf("while语句\n");
+            printf("WHILE-Statement\n");
             break;
         case 28:
-            printf("while条件语句\n");
+            printf("WHILE-ConditionStatement\n");
             break;
         case 29:
-            printf("while语句体\n");
+            printf("WHILE-StatementBody\n");
             break;
         case 30:
-            printf("for语句\n");
+            printf("FOR-Statement\n");
             break;
         case 31:
-            printf("for条件语句\n");
+            printf("FOR-ConditionStatement\n");
             break;
         case 32:
-            printf("for语句条件一\n");
+            printf("FOR-StatementCondition1\n");
             break;
         case 33:
-            printf("for语句条件二\n");
+            printf("FOR-StatementCondition2\n");
             break;
         case 34:
-            printf("for语句条件三\n");
+            printf("FOR-StatementCondition3\n");
             break;
         case 35:
-            printf("for语句体\n");
+            printf("FOR-StatementBody\n");
             break;
         case 36:
-            printf("return语句\n");
+            printf("RETURN-Statement\n");
             break;
         case 37:
-            printf("break语句\n");
+            printf("BREAK-Statement\n");
             break;
         case 38:
-            printf("do-while语句\n");
+            printf("DO-WHILE-Statement\n");
             break;
         case 39:
-            printf("do-while语句体\n");
+            printf("DO-WHILE-StatementBody\n");
             break;
         case 40:
-            printf("do-while循环条件\n");
+            printf("DO-WHILE-Condition\n");
             break;
         case 41:
-            printf("continue语句\n");
+            printf("continueStatement\n");
             break;
         case 42:
-            printf("函数声明\n");
+            printf("FuncDeclare\n");
             break;
         case 43:
-            printf("数组定义\n");
+            printf("ArrDef\n");
             break;
         case 44:
-            printf("数组类型\n");
+            printf("ArrType\n");
             break;
         case 45:
-            printf("数组名\n");
+            printf("ArrName\n");
             break;
         case 46:
-            printf("数组大小\n");
+            printf("ArrSize\n");
             break;
     }
 }
 
 void PreorderTranverse(ASTTree* root, int depth) {
     if (root == nullptr)
-        printf("");
+        printf("  ");
     else {
-        int i;  //控制缩进
+        int i;
         for (i = 0; i < depth; i++) {
-            printf("\t");
+            printf("  ");
         }
         showType(root->type);
         if (root->data.data != NULL) {
             for (i = 0; i < depth; i++) {
-                printf("\t");
+                printf("  ");
             }
             printf("%s\n", root->data.data);
         }
@@ -1592,16 +1542,16 @@ void PreorderTranverse(ASTTree* root, int depth) {
     }
 }
 
-int addname(char* token_text) {
-    if (mistake == 1) {
+int addName(char* token_text) {
+    if (haveMistake == 1) {
         return NULL;
     }
     int i, flag = 0;
     VDN* p = Vroot;
     while (p->next != NULL) {
         p = p->next;
-    }  //新的变量名一定会被添加到最后一个结点中
-    //添加变量之前先检查变量是否已经被定义过
+    }
+
     for (i = 0; i < (p->size); i++) {
         if (strcmp(token_text, p->variable[i]) == 0) {
             flag = 1;
@@ -1609,10 +1559,10 @@ int addname(char* token_text) {
         }
     }
     if (flag == 1) {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：变量重复定义\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: Duplicate variable define\n");
         exit(0);
-        mistake = 1;
+        haveMistake = 1;
         return flag;
     }
     char* savename = (char*)malloc(25 * sizeof(char));
@@ -1623,11 +1573,10 @@ int addname(char* token_text) {
 }
 
 int checkname_exist(char* token_text) {
-    if (mistake == 1) {
+    if (haveMistake == 1) {
         return NULL;
     }
-    //返回值为1代表变量已经被定义过，为0代表变量没有被定义过
-    //检查变量是否存在，只需要检查变量名是否在第一个结点或者最后一个结点
+
     int i;
     int flag = 0;
     VDN* p = Vroot;
@@ -1647,10 +1596,10 @@ int checkname_exist(char* token_text) {
         }
     }
     if (flag == 0) {
-        printf("第%d行出现错误\n", cnt_lines);
-        printf("错误：使用了未被定义的变量\n");
+        printf("Error in line %d\n", cnt_lines);
+        printf("Error: Using undeclared variable\n");
         exit(0);
-        mistake = 1;
+        haveMistake = 1;
     }
     return flag;
 }

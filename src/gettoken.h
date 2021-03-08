@@ -5,7 +5,7 @@
 #ifndef LANGUAGE_FORMAT_PROCESSING_TOOL_GETTOKEN_H
 #define LANGUAGE_FORMAT_PROCESSING_TOOL_GETTOKEN_H
 
-typedef enum token_kind {
+typedef enum TokenType {
     ERROR_TOKEN = 1,
     IDENT,      //标识符
     INT_CONST,  //整形常量
@@ -59,7 +59,7 @@ typedef enum token_kind {
     INCLUDE,     //头文件引用
     MACRO,       //宏定义
     ARRAY,       //数组
-} token_kind;
+} TokenType;
 
 const int KEYWORD_LEN = 13;
 static char* KeyWords[KEYWORD_LEN] = {

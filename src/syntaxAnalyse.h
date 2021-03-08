@@ -8,7 +8,6 @@
 #define LANUAGE_FORMAT_PROCESSING_GRAMMAR_ANALYSE_H
 
 typedef struct ASTTree {
-    /*孩子兄弟表示法*/
     struct ASTTree* l;
     struct ASTTree* r;
     int type;
@@ -18,15 +17,13 @@ typedef struct ASTTree {
     } data;
 } ASTTree;
 
-//存储变量名，用于检查变量定义
 typedef struct VariableDefNode {
-    int size;  //记录变量个数
-    // char *name;//用于记录函数名或标记外部变量
-    char* variable[20];  //用于记录变量名
+    int size;            // define num
+    char* variable[20];  // names
     struct VariableDefNode* next;
 } VDN;
 
-typedef enum data_kind {
+typedef enum DataType {
     EXTDEFLIST = 1,
     EXTVARDEF,
     EXTVARTYPE,
@@ -73,28 +70,48 @@ typedef enum data_kind {
     ARRAYTYPE,           //数组类型
     ARRAYNAME,           //数组名45
     ARRAYSIZE,           //数组大小
-} kind;
+};
 
-void syntaxAnalyse();          //语义分析函数
-void freeTree(ASTTree* root);  //释放root为根的全部结点
-ASTTree* program();            //<程序>子程序
-ASTTree* ExtDefList();         //<外部函数定义序列>子程序
+void syntaxAnalyse();
+
+void freeTree(ASTTree* root);
+
+ASTTree* program();
+
+ASTTree* ExtDefList();
+
 ASTTree* ExtDef();
+
 ASTTree* ExtVarDef();
+
 ASTTree* FuncDef();
-ASTTree* FormParaList();            //形参序列
-ASTTree* FormParaDef();             //形参定义
-ASTTree* CompState();               //<复合语句>子程序
-ASTTree* LocalVarDefList();         //局部变量定义子程序
-ASTTree* StateList();               //<语句序列>子程序
-ASTTree* Statement();               //<语句>子程序
-ASTTree* Expression(int endsym);    //<表达式>子程序
-char Precede(int c1, int c2);       //比较优先级函数
-void returntoken(int w, FILE* fp);  //将读出的tokem返回到文件流中
+
+ASTTree* FormParaList();
+
+ASTTree* FormParaDef();
+
+ASTTree* CompState();
+
+ASTTree* LocalVarDefList();
+
+ASTTree* StateList();
+
+ASTTree* Statement();
+
+ASTTree* Expression(int endsym);
+
+char Precede(int c1, int c2);
+
+void returnToken(int w, FILE* fp);
+
 void showType(int type);
+
 void PreorderTranverse(ASTTree* root, int depth);
-int addname(char* token_text);  //将变量名添加到结点中
+
+int addName(char* token_text);
+
 int checkname_exist(char* token_text);
+
 ASTTree* ArrayDef();
 
 #endif  // LANUAGE_FORMAT_PROCESSING_GRAMMAR_ANALYSE_H
