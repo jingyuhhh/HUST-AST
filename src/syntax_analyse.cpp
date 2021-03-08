@@ -1,9 +1,4 @@
 #include "syntax_analyse.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <stack>
 #include "getToken.h"
 
 using namespace std;
