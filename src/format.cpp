@@ -5,11 +5,10 @@
 #include "gettoken.h"
 
 extern FILE* fp;
-extern char token_text[20];  //存放自身单词值
+extern char token_text[20];
 
 void format() {
     int tabs = 0;  //控制缩进
-    int i;
     int flag = 0;  //用于标记无大括号但需要缩进的情况
     token *root, *tail, *p;
     while (1) {
@@ -27,8 +26,8 @@ void format() {
         if ((root != tail) && (strcmp(root->str, "}") == 0)) {
             tabs--;
         }
-        for (i = 0; i < tabs; i++) {  //输出缩进
-            printf("\t");
+        for (int i = 0; i < tabs; i++) {  //输出缩进
+            printf("    ");
         }
         if (flag == 1) {
             tabs--;
@@ -59,21 +58,20 @@ void format() {
 }
 
 token* readline() {
-    char c;
-    int w;
-    token* root = NULL;
-    token* tail = root;  //完成初始化
-    w = gettoken(fp);
-    if (w == -1) {
+    int word = gettoken(fp);
+    if (word == -1) {
         return NULL;
     }
+
+    token *root = NULL, *tail = NULL;
     root = (token*)malloc(sizeof(token));
     char* token_text1 = (char*)malloc(25 * sizeof(char));
     strcpy(token_text1, token_text);
     root->str = token_text1;
     root->next = NULL;
     tail = root;
-    /*每识别完一个单词就判断单词后面是不是换行符*/
+
+    char c;
     while ((c = fgetc(fp)) != '\n') {
         ungetc(c, fp);
         gettoken(fp);
