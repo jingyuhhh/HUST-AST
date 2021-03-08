@@ -1,5 +1,5 @@
-#include "getToken.h"
 #include "syntaxAnalyse.h"
+#include "getToken.h"
 
 using namespace std;
 

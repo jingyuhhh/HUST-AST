@@ -11,29 +11,28 @@ char* filename;
 FILE* fp;
 
 int main(int argc, char* argv[]) {
-    // if (argc != 2)
-    // {
-    //     fprintf(stderr, "%s <filename>", argv[0]);
-    //     exit(-1);
-    // }
-    // filename = argv[1];
-    filename = "../sample/s1.txt";
-    int op;
+    if (argc != 2) {
+        fprintf(stderr, "%s <filename>", argv[0]);
+        exit(-1);
+    }
+    filename = argv[1];
+
+    int option;
     while (1) {
         system("clear");
-        printf(" ——————————————————————\n");
-        printf("     输入序号以选择功能    \n");
-        printf("     1.词法分析          \n");
-        printf("     2.语法分析          \n");
-        printf("     3.格式化            \n");
-        printf("     0.退出              \n");
-        printf(" ——————————————————————\n");
-        scanf("%d", &op);
-        switch (op) {
+        printf(" +----------------------------+\n");
+        printf(" |    Choose A Function       |\n");
+        printf(" |    1. Lexical Analysis     |\n");
+        printf(" |    2. Syntax Analysis      |\n");
+        printf(" |    3. Show Formated File   |\n");
+        printf(" |    0. Exit                 |\n");
+        printf(" +----------------------------+\n");
+        scanf("%d", &option);
+        switch (option) {
             case 1:
                 fp = fopen(filename, "r");
                 wordAnalyse();
-                printf("按任意键继续\n");
+                printf("Press any key to continue\n");
                 fclose(fp);
                 getchar();
                 getchar();
@@ -41,7 +40,7 @@ int main(int argc, char* argv[]) {
             case 2:
                 fp = fopen(filename, "r");
                 syntaxAnalyse();
-                printf("按任意键继续\n");
+                printf("Press any key to continue\n");
                 fclose(fp);
                 getchar();
                 getchar();
@@ -49,18 +48,18 @@ int main(int argc, char* argv[]) {
             case 3:
                 fp = fopen(filename, "r");
                 format();
-                printf("按任意键继续\n");
+                printf("Press any key to continue\n");
                 fclose(fp);
                 getchar();
                 getchar();
                 break;
             case 0:
                 system("clear");
-                printf("感谢使用\n");
+                printf("Thanks for using ;P\n");
                 return 0;
             default:
-                printf("输入有误，请重新输入\n");
-                printf("按任意键继续\n");
+                printf("Unknown key, please enter again\n");
+                printf("Press any key to continue\n");
                 getchar();
                 getchar();
                 break;

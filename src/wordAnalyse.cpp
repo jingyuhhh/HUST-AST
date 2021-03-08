@@ -1,5 +1,5 @@
-#include "getToken.h"
 #include "wordAnalyse.h"
+#include "getToken.h"
 
 extern char token_text[20];  //存放单词自身值
 extern int cnt_lines;
