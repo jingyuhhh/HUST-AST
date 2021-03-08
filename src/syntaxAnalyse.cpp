@@ -1,5 +1,5 @@
-#include "syntax_analyse.h"
 #include "getToken.h"
+#include "syntaxAnalyse.h"
 
 using namespace std;
 
@@ -12,7 +12,7 @@ extern FILE* fp;
 VDN* Vroot;  //变量名链表根节点
 int isVoid, hasReturn, isInRecycle = 0;
 
-void syntax_analyse() {
+void syntaxAnalyse() {
     ASTTree* root = program();
     if (root == NULL || mistake == 1) {
         printf("程序语法错误\n");

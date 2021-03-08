@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "format.h"
 #include "getToken.h"
-#include "syntax_analyse.h"
-#include "word_analyse.h"
+#include "syntaxAnalyse.h"
+#include "wordAnalyse.h"
 
 char* filename;
 FILE* fp;
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         switch (op) {
             case 1:
                 fp = fopen(filename, "r");
-                word_analyse();
+                wordAnalyse();
                 printf("按任意键继续\n");
                 fclose(fp);
                 getchar();
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
                 break;
             case 2:
                 fp = fopen(filename, "r");
-                syntax_analyse();
+                syntaxAnalyse();
                 printf("按任意键继续\n");
                 fclose(fp);
                 getchar();

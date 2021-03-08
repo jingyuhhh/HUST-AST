@@ -1,11 +1,11 @@
-#include "word_analyse.h"
 #include "getToken.h"
+#include "wordAnalyse.h"
 
 extern char token_text[20];  //存放单词自身值
 extern int cnt_lines;
 extern FILE* fp;
 
-int word_analyse() {
+int wordAnalyse() {
     int kind;
     if (fp == NULL) {
         printf("文件打开失败\n");

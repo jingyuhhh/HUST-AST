@@ -75,7 +75,7 @@ typedef enum data_kind {
     ARRAYSIZE,           //数组大小
 } kind;
 
-void syntax_analyse();         //语义分析函数
+void syntaxAnalyse();          //语义分析函数
 void freeTree(ASTTree* root);  //释放root为根的全部结点
 ASTTree* program();            //<程序>子程序
 ASTTree* ExtDefList();         //<外部函数定义序列>子程序
