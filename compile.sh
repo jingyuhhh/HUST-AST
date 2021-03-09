@@ -1,3 +1,5 @@
 #!/bin/bash
 
-cmake && cd build && make && cd .. && ./bin/main.exe ./sample/s1.txt
+export CMAKE_GENERATOR="MinGW Makefiles"
+
+cd build && cmake .. && make && cd .. && ./bin/main.exe ./sample/s1.txt
