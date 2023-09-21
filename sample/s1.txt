@@ -1,15 +1,13 @@
 #include <stdio.h>
 int _a;
-long b;//
+long b;
 char _d,_e;
 double c,h;
-int num[10];//dcecwf
-
+int num[10];
 int i;
 int func(int a,int b){
 a=1;
 b=2l;
-
 c=.14;
 h=3.13f;
 _d='\x22';
@@ -24,7 +22,6 @@ a=a-b;
 num[10]="string";
 if(a>b){
 a=a+1;
-
 }
 }else{
 a=a/b;
@@ -65,5 +62,5 @@ a=b+c;
 }while(a>1);
 return a+b;
 }
-/* function def */
+/*函数声明
 void def();
