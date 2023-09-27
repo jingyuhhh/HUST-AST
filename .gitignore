@@ -108,7 +108,7 @@ fabric.properties
 *.lib
 
 # Executables
-*.exe
+
 *.out
 *.app
 
